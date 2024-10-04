@@ -1,0 +1,33 @@
+#HTRCのカプセルはsecure modeにする
+#mallet
+#対象書籍のリストを用意する。ここではrp_for_mallet_20240528.csv。idだけのファイル
+#例：
+#nyp.33433074890678
+#uva.x002551762
+#njp.32101032743567
+#hvd.hx5c4e
+#のようにidのみを記述する。
+#以下のコマンドでファイルのダウンロードと学習の実行が行われる。corpus.malletが作成される。
+htrc run mallet /home/dcuser/hast/rp_for_mallet_20240528.csv  -k 20
+
+#一度ダウンロードした後は以下のコマンドを使えばダウンロードを二重に行わない
+#htrc run mallet /media/secure_volume/workset -k 20
+
+#メモリの容量の変更 Mallet: java.lang.OutOfMemoryError
+#vi /home/dcuser/mallet/mallet-2.0.8RC3/bin/mallet.bat
+#MEMORY=1gを12gなどに変更 
+
+#topic modeling を実行（２回目以降のmalletの実行コマンド） 
+#設定を変えて実行すればよい。設定や書籍数によっては数日かかる。
+/home/dcuser/mallet/mallet-2.0.8RC3/bin/mallet train-topics --input /media/secure_volume/workset/../corpus.mallet --num-topics 100 --output-topic-keys rp_keys_100_200.txt --output-doc-topics rp_composition_100_200.txt --optimize-interval 20 --num-top-words 200
+
+#その他の確認コマンド
+#メモリ自体確認
+free -m 
+
+#javaのメモリ確認
+ps aux|grep java
+jstat -gc 0000
+
+#jvisualvm
+/usr/lib/jvm/java-8-oracle/bin/jvisualvm
