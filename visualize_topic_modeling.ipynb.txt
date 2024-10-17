@@ -1,0 +1,247 @@
+%matplotlib inline
+import pandas as pd
+import matplotlib.pyplot as plt
+
+#maintenance mode
+#dir=''
+#secure mode
+dir='/media/secure_volume/hast2/'
+rp = pd.read_csv(dir+'rp_for_mallet_20240604.csv', names=['id'])
+valid_volumes = pd.read_csv(dir+'valid_volumes20240604.csv')
+#compo_file="compo100.txt"
+compo_file="compo100_200.txt"
+
+import matplotlib
+fonts=set([f.name for f in matplotlib.font_manager.fontManager.ttflist])
+#print(fonts)
+
+
+def save_img(file,format="svg",dpi=300):
+    plt.savefig(dir+"png/"+file+"."+format,format=format, dpi=dpi)
+    return
+
+
+valid_volumes['year'].plot.hist(bins=101,range=(1740,1840), ylabel='Number of texts', xlabel='Publication year', title='Distribution of texts over year')
+plt.ylabel('Number of texts')
+plt.xlabel('Publication year')
+plt.title('Distribution of texts over time')
+
+
+year=list(range(1740,1841))
+count=valid_volumes['year'].value_counts()
+data=[]
+for i in year:
+    j=count[i]
+    data.append([i,j])
+df=pd.DataFrame(data,columns=["year","frequency"])
+
+
+df.plot.bar("year","frequency")
+
+
+import re
+header100_0=["num","file"]
+header100=list(range(0,100))
+header100=header100_0+header100
+
+
+#dataset=pd.read_table('/media/secure_volume/hast2/compo100.txt', header=None, names=header100)
+dataset=pd.read_table(dir+compo_file, header=None, names=header100)
+
+
+dataset['file']=dataset['file'].str.replace('file:/media/secure_volume/workset/','')
+
+
+dataset2=dataset["file"].str.extract(r'(?P<id>.+)\/(?P<page>.+)')
+
+
+dataset=pd.concat([dataset,dataset2],axis=1)
+
+
+dataset
+
+
+dataset["page"]
+
+
+valid_volumes
+
+
+df=pd.merge(dataset,valid_volumes,on='id',how='left')
+
+
+df
+
+
+df["year"]
+
+
+valid_volumes.query('id == "hvd.32044011833225"')
+
+
+valid_volumes.query('id == "njp.32101037604616"')
+
+
+mean=df.groupby('year').mean()
+
+
+mean[21].plot(xlim=[1740,1840], ylabel='Average Weight', xlabel='Year', title='Topic 21: General War - war fight battle field sword')
+
+
+mean[93].plot(xlim=[1740,1840], ylabel='Average Weight', xlabel='Year', title='Topic 93: Contemporary War - battle war brave men canto')
+
+
+mean[45].plot(xlim=[1740,1840], ylabel='Average Weight', xlabel='Year', title='Topic 45: Greek Latin Classics - arms war fight grave trojan')
+
+
+mean[49].plot(xlim=[1740,1840], ylabel='Average Weight', xlabel='Year', title='Topic 49: Chivalry - knight orlando jerusalem delivered canto')
+
+
+mean[83].plot(xlim=[1740,1840], ylabel='Average Weight', xlabel='Year', title='Topic 83: Commonwealth - hudibras made quoth make part')
+
+
+mean[92].plot(xlim=[1740,1840], ylabel='Average Weight', xlabel='Year', title='Topic 92: sadness - death tears grief heart thy')
+
+
+mean[53].plot(xlim=[1740,1840], ylabel='Average Weight', xlabel='Year', title='Topic 53: war(positive) - land thy fame o\'er freedom')
+
+
+
+import numpy as np
+
+
+def topic_plot(topicnum=0, title0='', dataset=mean, ylabel='Average Weight', xlabel='Year', xlim=[1740,1840]):
+  title='Topic '+str(topicnum)+': '+title0
+  dataset[topicnum].plot(xlim=xlim, ylabel=ylabel, xlabel=xlabel, title=title)
+  save_img("topic_"+str(topicnum))
+
+
+df2=df.groupby('year')
+
+
+df2.mean()
+
+
+df2[0].max()
+
+
+topic_plot(0)
+
+
+min=df2[0].min()
+max=df2[0].max()
+
+
+topicnum=0
+x=min.index.to_numpy()
+
+
+x
+
+
+x[x<=1840]
+
+
+i=len(x[x<=1840])
+
+
+min[1740:1840]
+
+
+plt.fill_between(x[:i],min[1740:1840],max[1740:1840],color='gray',alpha=0.5)
+
+
+#‚±‚±‚©‚ç
+import numpy as np
+df2=df.groupby('year')
+
+
+def topic_plot2(topicnum=0, title0='', dataset=df2, ylabel='Average Weight', xlabel='Year', xlim1=1740, xlim2=1840):
+  mean=df2[topicnum].mean()[xlim1:xlim2]
+  std=df2[topicnum].std()[xlim1:xlim2]
+#  min=df2[0].min()
+#  max=df2[0].max()
+  title='Topic '+str(topicnum)+': '+title0
+  mean.plot(ylabel=ylabel, xlabel=xlabel, title=title)
+  x=mean.index.to_numpy()
+  plt.fill_between(x,mean-std,mean+std,color='gray',alpha=0.5)
+  save_img("std_topic"+str(topicnum))
+
+
+if compo_file=="compo100.txt":
+    topictiltes=[[21,'Topic 21: General War - war fight battle field sword'
+        [93,'Topic 93: Contemporary War - battle war brave men canto'
+        [45,'Topic 45: Greek Latin Classics - arms war fight grave trojan'
+        [49,'Topic 49: Chivalry - knight orlando jerusalem delivered canto'
+        [83,'Topic 83: Commonwealth - hudibras made quoth make part'
+        [92,'Topic 92: sadness - death tears grief heart thy'
+        [53,'Topic 53: war(positive) - land thy fame o\'er freedom']]
+elif compo_file=="compo100_200.txt":
+    topictitles=[[33,"Topic 33 : General War (battle) - battle war fight field sword"],
+        [38,"Topic 38 : War Writing Worldwide - great note country time notes"],
+        [9,"Topic 9 : Greek Latin Classics - achilles troy hector iliad jove"],
+        [6,"Topic 6 : Chivalry (Orlando) - knight orlando knights king furioso"],
+        [14,"Topic 14 : Chivalry (Hudibras) - make hudibras tis made men"],
+        [93,"Topic 93 : War (positive, Liberty and Justice) - land freedom o'er war liberty"],
+        [8,"Topic 8 : Revenge - thy thou thee fate vengeance"],
+        [15,"Topic 15 : Battle (old age) - arms war fight ground vain "],
+        [25,"Topic 25 : War (triumph) - fame great thy glory age"],
+        [68,"Topic 68 : Expedition - canto jerusalem delivered foe chief"],
+        [81,"Topic 81 : Sadness - death tears dead life grief"],
+        ]
+topictitles
+
+
+topic_plot2(topictitles[0][0],topictitles[0][1])
+topic_plot2(topictitles[1][0],topictitles[1][1])
+topic_plot2(topictitles[2][0],topictitles[2][1])
+topic_plot2(topictitles[3][0],topictitles[3][1])
+topic_plot2(topictitles[4][0],topictitles[4][1])
+topic_plot2(topictitles[5][0],topictitles[5][1])
+topic_plot2(topictitles[6][0],topictitles[6][1])
+
+
+
+mean[53].plot.bar (xlim=[1740,1840], ylabel='Average Weight', xlabel='Year', title='Topic 53: war(positive) - land thy fame o\'er freedom')
+
+
+def topic_plot_bar(topicnum=0, title0='', dataset=mean, ylabel='Average Weight', xlabel='Year', xlim=[1740,1840]):
+  title='Topic '+str(topicnum)+': '+title0
+  dataset[topicnum].plot.bar(xlim=xlim, ylabel=ylabel, xlabel=xlabel, title=title, figsize=(18.5,10.5))
+
+
+for v,k in topictitles:
+    topic_plot(v,k)
+    plt.figure()
+
+
+for v,k in topictitles:
+    topic_plot2(v,k)
+    plt.figure()
+
+
+for v,k in topictitles:
+    topic_plot_bar(v,k)
+    plt.figure()
+
+
+#df.sort_values('age', ascending=False)
+#df['col1'].idxmax()
+checktopic=0
+checkfile=df.sort_values(checktopic, ascending=False)
+#checkfile=df.sort_values(checktopic).idxmax()
+checkfile
+
+checkfile.iat[0,1]
+
+
+def get_topicfile(checktopic,df=df):
+    checkfile=df.sort_values(checktopic, ascending=False)
+    outfile=checkfile.iat[0,1]
+    print(outfile)
+    outfile="/media/secure_volume/workset_20240604/"+outfile
+    with open(outfile) as f:
+        a=f.read()
+        print(a)
+    return
+
