@@ -1,0 +1,219 @@
+%matplotlib inline
+import pandas as pd
+import matplotlib.pyplot as plt
+import re
+import glob
+import tqdm
+import pickle
+
+dir='/media/secure_volume/hast2/'
+file_warpoem='war_preprocessed.txt'
+
+#read war poems
+with open(dir+file_warpoem) as f:
+    text=f.read()
+    text2=re.split(r'\n---\d',text[1:])
+war_poems=[]
+text2[0]=text2[0][4:]
+for i in text2:
+    k=0
+    j=['1'+i[k:k+3],i[k+3:]]
+    war_poems.append(j)
+war_poems_all=''
+for i in war_poems:
+    war_poems_all+="\n"+i[1]
+
+
+#preprocessing
+from nltk.stem.porter import PorterStemmer as PS
+ps=PS()
+def preprocess_1(text=war_poems_all):
+    text=text.lower()
+    text=re.sub('[.,;:!?*+^\[\]\{\}\"\#\$\%\&\'\(\)\-\—\_]',' ',text)
+    return text
+
+def preprocess_2(word=word):
+    word=ps.stem(word.rstrip())
+    return word
+
+
+#word count
+words_wp={}
+text=preprocess_1(war_poems_all)
+sum_wp=0
+for word in text.split():
+    word=preprocess_2(word)
+#    word=ps.stem(word.rstrip())
+    words_wp[word]=words_wp.get(word,0)+1
+    sum_wp+=1
+
+
+#percentage wp
+words_wp2={}
+for i in words_wp:
+    words_wp2[i]=words_wp[i]/sum_wp
+
+
+#read htrc poems
+dir2='/media/secure_volume/workset'
+words_htrc={}
+sum_htrc=0
+for v in tqdm.tqdm(glob.glob(dir2+'/**/*.txt', recursive=True)):
+    with open(v) as f:
+        #print(v)
+        text=f.read()
+        if 'volume-rights.txt' in v:
+            text=''
+            print('skipped')
+        text=preprocess_1(text)
+        #count htrc
+        for word in text.split():
+            word=preprocess_2(word)
+#            word=ps.stem(word.rstrip())
+            words_htrc[word]=words_htrc.get(word,0)+1
+            sum_htrc+=1
+#percentage htrc
+words_htrc2={}
+for i in tqdm.tqdm(words_htrc):
+    words_htrc2[i]=words_htrc[i]/sum_htrc
+
+
+#save dictionary
+file_dic='vocab_dic.pkl'
+with open(dir+file_dic,"wb") as f:
+    pickle.dump(words_htrc,f)
+
+#with open(dir+file_dic,"rb") as f:
+#    words_htrc=pickle.load(f)
+
+
+#difference
+words_difference={}
+for i in words_wp2:
+    words_difference[i]=words_wp2[i]-words_htrc2.get(i,1)
+#sorting
+d=[(v,k) for k,v in words_difference.items()]
+d.sort()
+d.reverse()
+
+
+#stopwords
+from nltk.corpus import stopwords
+stop_words=stopwords.words('english')
+
+
+#show
+wp=[]
+exception=["shall","0","sc","ry","n","cf","tn","tc"]
+stop_words+=exception
+for i in d:
+    if i[1] not in stop_words:
+        k,v=i[0],i[1]
+        wp.append([k,v])
+#thresholds valour,murder,trench
+thresholds=["valour","murder","trench"]
+threshold2=[]
+for i in thresholds:
+    for j in wp:
+        if j[1]==i:
+            threshold2.append(j)
+threshold2
+
+
+#check trench
+for i in d:
+    if "tren" in i[1]:
+        print(i)
+
+
+#get orig
+orig_words={}
+for word in preprocess_1(war_poems_all).split():
+    a=preprocess_2(word)
+    orig_words[a]=orig_words.get(a,word)
+
+def get_orig(keyword):
+    return orig_words[keyword]
+
+
+#show above thresholds
+#wp: difference without stopwords
+def show_above_threshold(key='valour'):
+    for i in wp:
+        if key==i[1]:
+            threshold=i[0]
+            #print(i)
+            j=i
+    out=""
+    out=str(j[0])+" "+str(j[1])+"\n"
+    for i in wp:
+        if i[0]>=threshold:
+            a=get_orig(i[1])
+            out+=a+" "
+    print(out)
+    return
+
+thresholds_num=0
+key=thresholds[threshold_num]
+#out=show_above_threshold(key)
+
+header="Feature terms\n-----------------------\nTotal word War Poetry: "+ \
+    str(sum_wp)+"\nTotal word HTRC: "+str(sum_htrc)+"\n-----------------------\n"
+out=header+show_above_threshold("muder")+"\n"+show_above_threshold("valour")+"\n"+show_above_threshold("trench")
+
+
+#write text
+def write_text(file,text):
+    with open(file,'w') as f:
+        for i in text:
+            f.write(i)
+
+out_file="/media/secure_volume/hast2/feature_vocab.txt"
+write_text(out_file,out)
+
+
+#pltshow 100 words difference
+wp100=[]
+wpall=[]
+for i in wp:
+    a=[words_wp2.get(i[1],0),get_orig(i[1])]
+    wpall.append(a)
+htrc100=htrcall[0:100]
+
+htrc100=[]
+htrcall=[]
+for i in wp:
+    a=[words_htrc2.get(i[1],0),get_orig(i[1])]
+    htrcall.append(a)
+htrc100=htrcall[0:100]
+
+
+
+#pltshow 100 words difference2
+df_wp=pd.DataFrame(wp100,columns=["Rates", "Featured Terms"])
+df_htrc=pd.DataFrame(htrc100,columns=["Rates", "Featured Terms"])
+
+#df_wp.plot.bar("Featured Terms","Rates")
+#df_htrc.plot.bar("Featured Terms","Rates")
+#fig=plt.figure(dpi=150)
+fig, ax=plt.subplots()
+fig.set_size_inches(18.5,10.5)
+c1,c2="blue","green"
+l1,l2="War Poetry","HTRC"
+ax.set_xlabel('Featured Terms')
+ax.set_ylabel('Rates')
+ax.set_title('Rates of Frequencies')
+#ax.grid()
+#ax.plot(df_wp["Featured Terms"],df_wp["Rates"],color=c1,label=l1)
+#ax.plot(df_wp["Featured Terms"],df_htrc["Rates"],color=c1,label=l1)
+df_wp.plot.bar(ax=ax,color=c1,label=l1)
+df_htrc.plot.bar(ax=ax,color=c2,label=l2)
+ax.set_xticklabels(df_wp["Featured Terms"],rotation=90)
+ax.legend(loc=0)
+fig.tight_layout()
+plt.savefig(dir+"featured_terms.png",format="png",dpi=300)
+plt.show()
+
+
+
+
