@@ -151,7 +151,7 @@ min[1740:1840]
 plt.fill_between(x[:i],min[1740:1840],max[1740:1840],color='gray',alpha=0.5)
 
 
-#‚±‚±‚©‚ç
+#â€šÂ±â€šÂ±â€šÂ©â€šÃ§
 import numpy as np
 df2=df.groupby('year')
 
@@ -235,13 +235,5 @@ checkfile
 checkfile.iat[0,1]
 
 
-def get_topicfile(checktopic,df=df):
-    checkfile=df.sort_values(checktopic, ascending=False)
-    outfile=checkfile.iat[0,1]
-    print(outfile)
-    outfile="/media/secure_volume/workset_20240604/"+outfile
-    with open(outfile) as f:
-        a=f.read()
-        print(a)
-    return
+
 
